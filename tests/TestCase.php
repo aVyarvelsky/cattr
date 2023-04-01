@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Http\Middleware\RecordRequestForSwagger;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +20,8 @@ abstract class TestCase extends BaseTestCase
         $this->withoutMiddleware(
             ThrottleRequests::class
         );
+
+        $this->withMiddleware(RecordRequestForSwagger::class);
     }
 
     public function createApplication(): Application
@@ -26,6 +29,8 @@ abstract class TestCase extends BaseTestCase
         $app = require __DIR__.'/../bootstrap/app.php';
 
         $app->make(Kernel::class)->bootstrap();
+
+        $app->make(\Illuminate\Contracts\Http\Kernel::class)->pushMiddleware(RecordRequestForSwagger::class);
 
         return $app;
     }

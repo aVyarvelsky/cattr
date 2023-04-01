@@ -13,6 +13,9 @@
       <directory suffix=".php">./app</directory>
     </include>
   </coverage>
+  <extensions>
+    <bootstrap class="Tests\Extensions\SwaggerGeneratorExtension"/>
+  </extensions>
   <php>
     <env name="APP_KEY" value="base64:neDf42yJpTI+tTD802WPqlRRSbvL9EmgSe5cmk8inPw="/>
     <env name="APP_DEBUG" value="false"/>
