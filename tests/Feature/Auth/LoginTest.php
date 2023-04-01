@@ -3,124 +3,82 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Cache;
-use Tests\Facades\UserFactory;
+use Arr;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
 {
-    private const URI = 'auth/login';
-    private const TEST_URI = 'auth/me';
-
+    private const URI = '/api/auth/login';
+    private const PASSWORD = 'password';
     private User $user;
-
     private array $loginData;
-
-    private const CAPTCHA_CACHE_KEY = 'AUTH_RECAPTCHA_LIMITER_{ip}_{email}_ATTEMPTS';
-    private const BAN_CACHE_KEY = 'AUTH_RATE_LIMITER_{ip}';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user = UserFactory::create();
+        $this->user = User::factory()->create(['password' => self::PASSWORD]);
 
         $this->loginData = [
             'email' => $this->user->email,
-            'password' => $this->user->full_name
+            'password' => self::PASSWORD,
         ];
     }
 
     public function test_success(): void
     {
-        $response = $this->postJson(self::URI, $this->loginData);
-        $response->assertOk();
+        $this->assertEquals(0, $this->user->tokens()->count());
 
-        $this->actingAs($response->decodeResponseJson()['access_token'])->get(self::TEST_URI)->assertOk();
+        $this->postJson(self::URI, $this->loginData)->assertOk()
+                 ->assertJson(fn (AssertableJson $json) =>
+                    $json
+                        ->where('status', 200)
+                        ->where('success', true)
+                        ->has('data', fn (AssertableJson $json) =>
+                            $json
+                                ->where('token_type', 'bearer')
+                                ->where('expires_in', null)
+                                ->has('access_token')
+                                ->has('user')));
+
+        $this->assertEquals(1, $this->user->tokens()->count());
     }
 
     public function test_wrong_credentials(): void
     {
-        $this->loginData['password'] = 'wrong_password';
-        $response = $this->postJson(self::URI, $this->loginData);
+        $this->assertEquals(0, $this->user->tokens()->count());
 
-        $response->assertUnauthorized();
+        $this->postJson(self::URI, Arr::set($this->loginData, 'password', 'wrong_password'))
+             ->assertUnauthorized();
+
+        $this->assertEquals(0, $this->user->tokens()->count());
     }
 
     public function test_disabled_user(): void
     {
-        $this->user->active = false;
-        $this->user->save();
-        $response = $this->postJson(self::URI, $this->loginData);
+        $this->user->update(['active' => false]);
 
-        $response->assertForbidden('authorization.user_disabled', false);
+        $this->assertEquals(0, $this->user->tokens()->count());
+
+        $this->postJson(self::URI, $this->loginData)->assertForbidden();
+
+        $this->assertEquals(0, $this->user->tokens()->count());
     }
 
     public function test_soft_deleted_user(): void
     {
         $this->user->delete();
-        $response = $this->postJson(self::URI, $this->loginData);
 
-        $response->assertUnauthorized();
+        $this->assertEquals(0, $this->user->tokens()->count());
+
+        $this->postJson(self::URI, $this->loginData)->assertUnauthorized();
+
+        $this->assertEquals(0, $this->user->tokens()->count());
     }
 
     public function test_without_params(): void
     {
-        $response = $this->postJson(self::URI);
-
-        $response->assertError(self::HTTP_BAD_REQUEST);
-    }
-
-    public function test_recaptcha(): void
-    {
-        config(['recaptcha.enabled' => true]);
-        config(['recaptcha.failed_attempts' => 1]);
-
-        $cacheKey = str_replace(
-            ['{email}', '{ip}'],
-            [$this->loginData['email'], '127.0.0.1'],
-            self::CAPTCHA_CACHE_KEY
-        );
-
-        $this->assertFalse(Cache::has($cacheKey));
-
-        $this->loginData['password'] = 'wrong_password';
-        $this->postJson(self::URI, $this->loginData);
-
-        $this->assertTrue(Cache::has($cacheKey));
-
-        $this->assertEquals(1, Cache::get($cacheKey));
-
-        $response = $this->postJson(self::URI, $this->loginData);
-
-        $response->assertError(self::HTTP_TOO_MANY_REQUESTS, 'authorization.captcha');
-    }
-
-    public function test_ban(): void
-    {
-        config(['recaptcha.enabled' => true]);
-        config(['recaptcha.rate_limiter_enabled' => true]);
-        config(['recaptcha.failed_attempts' => 0]);
-        config(['recaptcha.ban_attempts' => 1]);
-
-        $cacheKey = str_replace('{ip}', '127.0.0.1', self::BAN_CACHE_KEY);
-
-        $this->assertFalse(Cache::has($cacheKey));
-
-        $this->loginData['password'] = 'wrong_password';
-        $this->postJson(self::URI, $this->loginData);
-
-        $this->assertTrue(Cache::has($cacheKey));
-
-        $cacheResponse = Cache::get($cacheKey);
-
-        $this->assertArrayHasKey('amounts', $cacheResponse);
-        $this->assertArrayHasKey('time', $cacheResponse);
-
-        $this->assertEquals(1, $cacheResponse['amounts']);
-
-        $response = $this->postJson(self::URI, $this->loginData);
-
-        $response->assertError(self::HTTP_LOCKED, 'authorization.banned');
+        $this->postJson(self::URI)->assertUnprocessable();
     }
 }

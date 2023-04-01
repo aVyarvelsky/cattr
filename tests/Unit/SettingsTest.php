@@ -2,52 +2,63 @@
 
 namespace Tests\Unit;
 
-use App\Models\Setting;
 use App\Services\SettingsProviderService;
 use Tests\TestCase;
 
 class SettingsTest extends TestCase
 {
+    private SettingsProviderService $service;
+
+    private string $settingKey;
+    private string $settingValue;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->service = resolve(SettingsProviderService::class);
+
+        $this->settingKey = fake()->word();
+        $this->settingValue = fake()->word();
+
+        $this->service->set($this->settingKey, $this->settingValue);
+    }
+
     public function test_get_setting(): void
     {
-        $service = resolve(SettingsProviderService::class);
-
-        $service->set('test', 'language', 'en');
-
-        $setting = $service->get('test', 'language');
-
-        $this->assertEquals($setting, 'en');
+        $this->assertEquals($this->settingValue, $this->service->get($this->settingKey));
     }
 
     public function test_get_all_settings(): void
     {
-        $service = resolve(SettingsProviderService::class);
-
-        $service->set('test', 'language', 'en');
-        $service->set('test', 'key', 'value');
-
-        $settings = $service->all('test');
-
-        $this->assertDatabaseHas((new Setting)->getTable(), ['value' => reset($settings)]);
+        $this->assertEquals([
+            $this->settingKey => $this->settingValue
+        ], $this->service->all());
     }
 
     public function test_set_one_setting(): void
     {
-        $service = resolve(SettingsProviderService::class);
+        $key = fake()->word();
+        $value = fake()->word();
 
-        $result = $service->set('test', 'language', 'en');
+        $this->assertNull($this->service->get($key));
 
-        $this->assertEquals($result, ['language' => 'en']);
+        $this->service->set($key, $value);
+
+        $this->assertEquals($value, $this->service->get($key));
     }
 
     public function test_set_multiple_settings(): void
     {
-        $service = resolve(SettingsProviderService::class);
+        $data = [fake()->word() => fake()->word(), fake()->word() => fake()->word()];
 
-        $data = ['language' => 'en', 'timezone' => 'utc'];
+        $this->service->set($data);
 
-        $result = $service->set('test', $data);
-
-        $this->assertEquals($result, $data);
+        $this->assertEquals(array_merge(
+            $data,
+            [
+                $this->settingKey => $this->settingValue,
+            ]
+        ), $this->service->all());
     }
 }

@@ -67,10 +67,10 @@ composer.phar
 /public/mix-manifest.json
 /public/mix-sri.json
 /public/fonts
-/public/images
 /public/vendor
 
 /public/sw.*
 /public/workbox*
 
 erd.svg
+/.phpunit.cache/
