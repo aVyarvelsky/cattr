@@ -22,6 +22,7 @@ class SwaggerService
     {
         Arr::add(self::$data, $this->getCollectionPath(), [
             'deprecated' => $this->request->route()->action['meta']['deprecated'] ?? false,
+            'operationId' => $this->request->route()->getName(),
             'responses' => [],
         ]);
 
@@ -74,7 +75,7 @@ class SwaggerService
     private static function getSwaggerHeader(): array
     {
         return [
-            'openapi' => '3.0.0',
+            'openapi' => '3.0.1',
             'info' => [
                 'title' => 'Cattr API Documentation',
                 'contact' => [
@@ -82,6 +83,16 @@ class SwaggerService
                     'email' => 'hi@cattr.app',
                 ],
                 'version' => (string) app(Version::class),
+            ],
+            'servers' => [
+                [
+                    'url' => 'http://localhost:8000',
+                    'description' => 'Local server served by Artisan',
+                ],
+                [
+                    'url' => 'https://demo.cattr.app/api',
+                    'description' => 'Demo Cattr server',
+                ],
             ],
         ];
     }
