@@ -2,9 +2,13 @@
 
 namespace App\Services;
 
+use App\Docs\RequestHeader;
 use App\Helpers\Version;
 use Arr;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
+use ReflectionClass;
+use ReflectionException;
 use Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -13,6 +17,8 @@ class SwaggerService
     private static array $data = [];
     private static bool $fired = false;
 
+    private array $parameters = [];
+
     public function __construct(private readonly Request $request, private readonly Response $response)
     {
         self::$fired = true;
@@ -20,11 +26,17 @@ class SwaggerService
 
     public function processData(): void
     {
-        Arr::add(self::$data, $this->getCollectionPath(), [
+        $this->processMiddlewares();
+        $this->processHeadersExamples();
+
+        if (!Arr::exists(self::$data, $this->getCollectionPath())) {
+            Arr::set(self::$data, $this->getCollectionPath(), [
             'deprecated' => $this->request->route()->action['meta']['deprecated'] ?? false,
             'operationId' => $this->request->route()->getName(),
             'responses' => [],
-        ]);
+            'parameters' => $this->parameters,
+            ]);
+        }
 
         $currentResponsePath = sprintf(
             '%s.responses.%s',
@@ -32,7 +44,7 @@ class SwaggerService
             $this->response->getStatusCode(),
         );
 
-        $response = Arr::exists(self::$data, $currentResponsePath) ? Arr::get(self::$data, $currentResponsePath) :[];
+        $response = Arr::exists(self::$data, $currentResponsePath) ? Arr::get(self::$data, $currentResponsePath) : [];
 
         $response['headers'] = array_merge(
             $response['headers'] ?? [],
@@ -97,8 +109,46 @@ class SwaggerService
         ];
     }
 
+    private function processMiddlewares(): void
+    {
+        $router = app(Router::class);
+        $middlewares = $router->resolveMiddleware(
+            array_unique(
+                array_map(
+                    static fn($e) => explode(':', $e, 2)[0],
+                    array_merge($router->getMiddleware(), $this->request->route()->middleware()),
+                )
+            )
+        );
+
+        foreach ($middlewares as $middleware) {
+            $this->parameters = array_merge(
+                $this->parameters,
+                rescue(
+                    /**
+                    * @throws ReflectionException
+                    */
+                    static fn() =>
+                        array_map(
+                            static fn($el) => $el->newInstance()->dump(),
+                            (new ReflectionClass($middleware))->getAttributes(RequestHeader::class),
+                        ),
+                    [],
+                )
+            );
+        }
+    }
+
     private function getCollectionPath(): string
     {
         return sprintf('/%s.%s', $this->request->route()?->uri(), strtolower($this->request->method()));
+    }
+
+    private function processHeadersExamples(): void
+    {
+        foreach ($this->request->headers as $header => $value) {
+            var_dump($header, $value);
+        }
+        die;
     }
 }

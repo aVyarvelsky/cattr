@@ -2,11 +2,20 @@
 
 namespace App\Http\Middleware;
 
+use App\Docs\RequestHeader;
+use App\Docs\Schemas\JsonSchema;
 use App\Exceptions\Entities\AuthorizationException;
 use Closure;
 use Illuminate\Auth\Middleware\Authenticate as BaseAuthenticate;
 use Lang;
 
+#[RequestHeader(
+    name: 'Authorization',
+    description: 'Authorization string',
+    schema: new JsonSchema(),
+    required: true,
+    shouldMask: true,
+)]
 class Authenticate extends BaseAuthenticate
 {
     public const DEFAULT_USER_LANGUAGE = 'en';
