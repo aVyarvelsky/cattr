@@ -74,3 +74,4 @@ composer.phar
 
 erd.svg
 /.phpunit.cache/
+/storage/documentation.json

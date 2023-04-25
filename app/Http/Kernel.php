@@ -2,10 +2,11 @@
 
 namespace App\Http;
 
+use App\Docs\ResponseHeader;
+use App\Docs\Schemas\JsonSchema;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\SentryContext;
 use App\Http\Middleware\TrimStrings;
-use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -14,6 +15,7 @@ use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
+use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
@@ -24,6 +26,12 @@ use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
+#[ResponseHeader(
+    name: 'Content-Type',
+    description: 'Type of response',
+    schema: new JsonSchema(),
+    required: true,
+)]
 class Kernel extends HttpKernel
 {
     /**
@@ -31,7 +39,7 @@ class Kernel extends HttpKernel
      *
      * These middleware are run during every request to your application.
      *
-     * @var array
+     * @inerhitDoc
      */
     protected $middleware = [
         CheckForMaintenanceMode::class,
@@ -46,7 +54,7 @@ class Kernel extends HttpKernel
     /**
      * The application's route middleware groups.
      *
-     * @var array
+     * @inerhitDoc
      */
     protected $middlewareGroups = [
         'web' => [
@@ -64,20 +72,28 @@ class Kernel extends HttpKernel
     ];
 
     /**
-     * The application's route middleware.
+     * The application's middleware aliases.
      *
-     * These middleware may be assigned to groups or used individually.
-     *
-     * @var array
+     * @inerhitDoc
      */
-    protected $routeMiddleware = [
-        'auth' => Authenticate::class,
+    protected $middlewareAliases = [
+        'auth'       => Authenticate::class,
         'auth.basic' => AuthenticateWithBasicAuth::class,
-        'bindings' => SubstituteBindings::class,
-        'can' => Authorize::class,
-        'throttle' => ThrottleRequests::class,
-        'abilities' => CheckAbilities::class,
-        'ability' => CheckForAnyAbility::class,
-        'signed' => ValidateSignature::class,
+        'bindings'   => SubstituteBindings::class,
+        'can'        => Authorize::class,
+        'throttle'   => ThrottleRequests::class,
+        'abilities'  => CheckAbilities::class,
+        'ability'    => CheckForAnyAbility::class,
+        'signed'     => ValidateSignature::class,
     ];
+
+    /**
+     * Returns list of global middleware
+     * Used by documentation generation system
+     * @return string[]
+     */
+    final public function getMiddleware(): array
+    {
+        return $this->middleware;
+    }
 }

@@ -20,7 +20,7 @@ class Authenticate extends BaseAuthenticate
 {
     public const DEFAULT_USER_LANGUAGE = 'en';
 
-    public function handle($request, Closure $next, ...$guards): mixed
+    final public function handle($request, Closure $next, ...$guards): mixed
     {
         $this->authenticate($request, $guards);
 

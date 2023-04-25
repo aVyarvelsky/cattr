@@ -6,7 +6,7 @@ use App\Docs\Schemas\SchemaInterface;
 use Attribute;
 
 #[Attribute]
-class RequestHeader implements Dumpable
+class ResponseHeader implements Dumpable
 {
     public function __construct(
         private readonly string          $name,
@@ -26,14 +26,14 @@ class RequestHeader implements Dumpable
     final public function dump(): array
     {
         return [
-            'name' => $this->name,
-            'description' => $this->description,
-            'required' => $this->required,
-            'deprecated' => $this->deprecated,
-            'example' => $this->shouldMask ? self::mask() : null,
-            'in' => 'header',
-            'schema' => $this->schema->dump(),
-            'x-masked' => $this->shouldMask,
+            $this->name => [
+                'description' => $this->description,
+                'required' => $this->required,
+                'deprecated' => $this->deprecated,
+                'example' => $this->shouldMask ? self::mask() : null,
+                'schema' => $this->schema->dump(),
+                'x-masked' => $this->shouldMask,
+            ],
         ];
     }
 }
