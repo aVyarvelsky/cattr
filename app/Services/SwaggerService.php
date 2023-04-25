@@ -80,12 +80,15 @@ class SwaggerService
             $this->request->route()->getActionMethod(),
         );
 
-        Arr::add(self::$data, $this->getCollectionPath(), [
+        if (!Arr::has(self::$data, $this->getCollectionPath())) {
+            Arr::set(self::$data, $this->getCollectionPath(), [
             'deprecated'  => $this->request->route()->action['meta']['deprecated'] ?? false,
+            'tags'  => $this->request->route()->action['meta']['tags'] ?? [],
             'operationId' => $this->request->route()->getName(),
             'responses'   => [],
             'parameters'  => $this->parameters,
-        ]);
+            ]);
+        }
 
         $currentResponsePath = sprintf(
             '%s.responses',

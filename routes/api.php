@@ -54,7 +54,7 @@ Route::group([
 
         $router->withoutMiddleware('auth:sanctum')->group(static function (Router $router) {
             $router->post('login', [AuthController::class, 'login'])
-                ->name('auth.login');
+                ->name('auth.login')->tag('auth');
             $router->post('password/reset/request', [PasswordResetController::class, 'request'])
                 ->name('auth.reset.request');
             $router->post('password/reset/validate', [PasswordResetController::class, 'validate'])
