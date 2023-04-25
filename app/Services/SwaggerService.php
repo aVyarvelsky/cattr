@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Docs\RequestHeader;
+use App\Docs\ResponseExampleFilter;
 use App\Docs\ResponseHeader;
+use App\Docs\UsesClass;
+use App\Docs\UsesMethod;
 use App\Helpers\Version;
 use App\Http\Kernel;
 use Arr;
@@ -11,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionMethod;
+use Reflector;
 use Symfony\Component\HttpFoundation\Response;
 
 class SwaggerService
@@ -20,6 +25,8 @@ class SwaggerService
 
     private array $parameters = [];
     private array $headers = [];
+    private array $exampleFilters = [];
+    private array $responseSchema = [];
 
     public function __construct(private readonly Request $request, private readonly Response $response)
     {
@@ -67,6 +74,11 @@ class SwaggerService
         $this->processClassAttributes(Kernel::class);
         $this->processMiddlewares();
         $this->processHeaderExamples();
+        $this->processClassAttributes($this->request->route()->getController());
+        $this->processMethodAttributes(
+            $this->request->route()->getController(),
+            $this->request->route()->getActionMethod(),
+        );
 
         Arr::add(self::$data, $this->getCollectionPath(), [
             'deprecated'  => $this->request->route()->action['meta']['deprecated'] ?? false,
@@ -85,7 +97,11 @@ class SwaggerService
         $responses[$this->response->getStatusCode()] = [
             'content' => [
                 $this->response->headers->get('Content-Type') => [
-                    'example' => $this->response->getContent(),
+                    'example' => $this->response->headers->get('Content-Type') === 'application/json' &&
+                    $this->response->getContent() ?
+                        $this->filterJsonContent($this->response->getContent()) :
+                        $this->response->getContent(),
+                    'schema' => $this->responseSchema,
                 ],
             ],
             'headers' => $this->headers,
@@ -102,6 +118,15 @@ class SwaggerService
             return;
         }
 
+        $this->processAttributes($reflection);
+
+        if ($parent = $reflection->getParentClass()) {
+            $this->processClassAttributes($parent->getName());
+        }
+    }
+
+    private function processAttributes(Reflector $reflection): void
+    {
         $this->parameters = array_merge(
             $this->parameters,
             array_map(
@@ -112,14 +137,39 @@ class SwaggerService
 
         $this->headers = array_merge(
             $this->headers,
-            array_map(
-                static fn($el) => $el->newInstance()->dump(),
-                $reflection->getAttributes(ResponseHeader::class),
+            Arr::keyBy(
+                array_map(
+                    static fn($el) => $el->newInstance()->dump(),
+                    $reflection->getAttributes(ResponseHeader::class),
+                ),
+                'name',
             ),
         );
 
-        if ($parent = $reflection->getParentClass()) {
-            $this->processClassAttributes($parent->getName());
+        $this->exampleFilters = array_merge(
+            $this->exampleFilters,
+            array_map(
+                static fn($el) => $el->newInstance()->attributePath,
+                $reflection->getAttributes(ResponseExampleFilter::class),
+            ),
+        );
+
+        $usesClasses = array_map(
+            static fn($el) => $el->newInstance()->class,
+            $reflection->getAttributes(UsesClass::class),
+        );
+
+        foreach ($usesClasses as $class) {
+            $this->processClassAttributes($class);
+        }
+
+        $usesMethods = array_map(
+            static fn($el) => [$el->newInstance()->class, $el->newInstance()->method],
+            $reflection->getAttributes(UsesMethod::class),
+        );
+
+        foreach ($usesMethods as $method) {
+            $this->processMethodAttributes($method[0], $method[1]);
         }
     }
 
@@ -134,7 +184,7 @@ class SwaggerService
                     app(Kernel::class)->getMiddleware(),
                     $router->gatherRouteMiddleware($this->request->route()),
                 ),
-            )
+            ),
         );
 
         foreach ($middlewares as $middleware) {
@@ -165,8 +215,36 @@ class SwaggerService
         }
     }
 
+    private function processMethodAttributes(object|string $object, string $method): void
+    {
+        try {
+            $reflection = new ReflectionMethod($object, $method);
+        } catch (ReflectionException) {
+            return;
+        }
+
+        $this->processAttributes($reflection);
+    }
+
     private function getCollectionPath(): string
     {
         return sprintf('/%s.%s', $this->request->route()?->uri(), strtolower($this->request->method()));
+    }
+
+    private function filterJsonContent(string $content): string
+    {
+        $result = json_decode($content, true);
+
+        foreach ($this->exampleFilters as $filterPath) {
+            if (Arr::has($result, sprintf('data.%s', $filterPath))) {
+                data_set($result, sprintf('data.%s', $filterPath), '<masked>');
+            }
+
+            if (Arr::has($result, $filterPath)) {
+                data_set($result, $filterPath, '<masked>');
+            }
+        }
+
+        return json_encode($result);
     }
 }

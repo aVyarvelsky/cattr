@@ -13,7 +13,7 @@ readonly class JsonSchema implements SchemaInterface
 
     }
 
-    public function dump(): array
+    final public function dump(): array
     {
         return [
             'type' => $this->type,

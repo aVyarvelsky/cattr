@@ -11,7 +11,7 @@ class MeTest extends TestCase
 {
     private const URI = 'api/auth/me';
 
-    public function test_me(): void
+    final public function test_me(): void
     {
         Sanctum::actingAs(User::factory()->create());
 
@@ -23,7 +23,7 @@ class MeTest extends TestCase
                     ->has('data'));
     }
 
-    public function test_without_auth(): void
+    final public function test_without_auth(): void
     {
         $this->getJson(self::URI)->assertUnauthorized();
     }

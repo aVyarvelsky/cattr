@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use App\Docs\ResponseHeader;
+use App\Docs\Schemas\Enums\JsonVarType;
 use App\Docs\Schemas\JsonSchema;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\SentryContext;
@@ -29,7 +30,7 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 #[ResponseHeader(
     name: 'Content-Type',
     description: 'Type of response',
-    schema: new JsonSchema(),
+    schema: new JsonSchema(JsonVarType::STRING),
     required: true,
 )]
 class Kernel extends HttpKernel

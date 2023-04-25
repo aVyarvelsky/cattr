@@ -12,7 +12,7 @@ class SettingsTest extends TestCase
     private string $settingKey;
     private string $settingValue;
 
-    protected function setUp(): void
+    final protected function setUp(): void
     {
         parent::setUp();
 
@@ -24,19 +24,19 @@ class SettingsTest extends TestCase
         $this->service->set($this->settingKey, $this->settingValue);
     }
 
-    public function test_get_setting(): void
+    final public function test_get_setting(): void
     {
         $this->assertEquals($this->settingValue, $this->service->get($this->settingKey));
     }
 
-    public function test_get_all_settings(): void
+    final public function test_get_all_settings(): void
     {
         $this->assertEquals([
             $this->settingKey => $this->settingValue
         ], $this->service->all());
     }
 
-    public function test_set_one_setting(): void
+    final public function test_set_one_setting(): void
     {
         $key = fake()->word();
         $value = fake()->word();
@@ -48,7 +48,7 @@ class SettingsTest extends TestCase
         $this->assertEquals($value, $this->service->get($key));
     }
 
-    public function test_set_multiple_settings(): void
+    final public function test_set_multiple_settings(): void
     {
         $data = [fake()->word() => fake()->word(), fake()->word() => fake()->word()];
 

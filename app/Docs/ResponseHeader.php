@@ -18,22 +18,21 @@ class ResponseHeader implements Dumpable
     ) {
     }
 
-    public static function mask(): string
-    {
-        return '<masked>';
-    }
-
     final public function dump(): array
     {
         return [
-            $this->name => [
-                'description' => $this->description,
-                'required' => $this->required,
-                'deprecated' => $this->deprecated,
-                'example' => $this->shouldMask ? self::mask() : null,
-                'schema' => $this->schema->dump(),
-                'x-masked' => $this->shouldMask,
-            ],
+            'name'        => $this->name,
+            'description' => $this->description,
+            'required'    => $this->required,
+            'deprecated'  => $this->deprecated,
+            'example'     => $this->shouldMask ? self::mask() : null,
+            'schema'      => $this->schema->dump(),
+            'x-masked'    => $this->shouldMask,
         ];
+    }
+
+    public static function mask(): string
+    {
+        return '<masked>';
     }
 }

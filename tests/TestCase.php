@@ -24,7 +24,7 @@ abstract class TestCase extends BaseTestCase
         $this->withMiddleware(RecordRequestForSwagger::class);
     }
 
-    public function createApplication(): Application
+    final public function createApplication(): Application
     {
         $app = require __DIR__.'/../bootstrap/app.php';
 

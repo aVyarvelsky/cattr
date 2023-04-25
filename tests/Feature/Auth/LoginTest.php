@@ -14,7 +14,7 @@ class LoginTest extends TestCase
     private User $user;
     private array $loginData;
 
-    protected function setUp(): void
+    final protected function setUp(): void
     {
         parent::setUp();
 
@@ -26,7 +26,7 @@ class LoginTest extends TestCase
         ];
     }
 
-    public function test_success(): void
+    final public function test_success(): void
     {
         $this->assertEquals(0, $this->user->tokens()->count());
 
@@ -45,7 +45,7 @@ class LoginTest extends TestCase
         $this->assertEquals(1, $this->user->tokens()->count());
     }
 
-    public function test_wrong_credentials(): void
+    final public function test_wrong_credentials(): void
     {
         $this->assertEquals(0, $this->user->tokens()->count());
 
@@ -55,7 +55,7 @@ class LoginTest extends TestCase
         $this->assertEquals(0, $this->user->tokens()->count());
     }
 
-    public function test_disabled_user(): void
+    final public function test_disabled_user(): void
     {
         $this->user->update(['active' => false]);
 
@@ -66,7 +66,7 @@ class LoginTest extends TestCase
         $this->assertEquals(0, $this->user->tokens()->count());
     }
 
-    public function test_soft_deleted_user(): void
+    final public function test_soft_deleted_user(): void
     {
         $this->user->delete();
 
@@ -77,7 +77,7 @@ class LoginTest extends TestCase
         $this->assertEquals(0, $this->user->tokens()->count());
     }
 
-    public function test_without_params(): void
+    final public function test_without_params(): void
     {
         $this->postJson(self::URI)->assertUnprocessable();
     }

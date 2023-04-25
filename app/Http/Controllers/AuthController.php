@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Docs\ResponseExampleFilter;
 use App\Exceptions\Entities\AuthorizationException;
 use App\Exceptions\Entities\DeprecatedApiException;
 use App\Helpers\Recaptcha;
@@ -71,6 +72,7 @@ class AuthController extends BaseController
      * @apiUse         CaptchaError
      * @apiUse         LimiterError
      */
+    #[ResponseExampleFilter('access_token')]
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->only(['email', 'password', 'recaptcha']);
