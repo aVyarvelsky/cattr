@@ -8,8 +8,7 @@ use PHPUnit\Event\TestRunner\ExecutionFinishedSubscriber as ExecutionFinishedSub
 
 class ExecutionFinishedSubscriber implements ExecutionFinishedSubscriberInterface
 {
-
-    public function notify(ExecutionFinished $event): void
+    final public function notify(ExecutionFinished $event): void
     {
         SwaggerService::dumpData();
     }

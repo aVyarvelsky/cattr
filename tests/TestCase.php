@@ -20,8 +20,6 @@ abstract class TestCase extends BaseTestCase
         $this->withoutMiddleware(
             ThrottleRequests::class
         );
-
-        $this->withMiddleware(RecordRequestForSwagger::class);
     }
 
     final public function createApplication(): Application

@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SwaggerService
 {
+    public const MASKED_VALUE = '<masked>';
     private static array $data = [];
     private static bool $fired = false;
 
@@ -240,11 +241,11 @@ class SwaggerService
 
         foreach ($this->exampleFilters as $filterPath) {
             if (Arr::has($result, sprintf('data.%s', $filterPath))) {
-                data_set($result, sprintf('data.%s', $filterPath), '<masked>');
+                data_set($result, sprintf('data.%s', $filterPath), self::MASKED_VALUE);
             }
 
             if (Arr::has($result, $filterPath)) {
-                data_set($result, $filterPath, '<masked>');
+                data_set($result, $filterPath, self::MASKED_VALUE);
             }
         }
 

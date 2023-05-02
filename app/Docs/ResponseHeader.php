@@ -3,6 +3,7 @@
 namespace App\Docs;
 
 use App\Docs\Schemas\SchemaInterface;
+use App\Services\SwaggerService;
 use Attribute;
 
 #[Attribute]
@@ -25,14 +26,9 @@ class ResponseHeader implements Dumpable
             'description' => $this->description,
             'required'    => $this->required,
             'deprecated'  => $this->deprecated,
-            'example'     => $this->shouldMask ? self::mask() : null,
+            'example'     => $this->shouldMask ? SwaggerService::MASKED_VALUE  : null,
             'schema'      => $this->schema->dump(),
             'x-masked'    => $this->shouldMask,
         ];
-    }
-
-    public static function mask(): string
-    {
-        return '<masked>';
     }
 }

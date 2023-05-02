@@ -7,6 +7,9 @@ use Arr;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
 
+/**
+ * @covers \App\Http\Controllers\AuthController::login
+ */
 class LoginTest extends TestCase
 {
     private const URI = '/api/auth/login';

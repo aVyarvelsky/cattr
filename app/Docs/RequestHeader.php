@@ -3,6 +3,7 @@
 namespace App\Docs;
 
 use App\Docs\Schemas\SchemaInterface;
+use App\Services\SwaggerService;
 use Attribute;
 
 #[Attribute]
@@ -17,12 +18,6 @@ class RequestHeader implements Dumpable
         private readonly bool            $shouldMask = false,
     ) {
     }
-
-    public static function mask(): string
-    {
-        return '<masked>';
-    }
-
     final public function dump(): array
     {
         return [
@@ -30,7 +25,7 @@ class RequestHeader implements Dumpable
             'description' => $this->description,
             'required' => $this->required,
             'deprecated' => $this->deprecated,
-            'example' => $this->shouldMask ? self::mask() : null,
+            'example' => $this->shouldMask ? SwaggerService::MASKED_VALUE : null,
             'in' => 'header',
             'schema' => $this->schema->dump(),
             'x-masked' => $this->shouldMask,

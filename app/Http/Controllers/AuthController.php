@@ -95,15 +95,13 @@ class AuthController extends BaseController
         }
 
         if ($user->invitation_sent) {
-            $user->invitation_sent = false;
-            $user->save();
+            $user->update(['invitation_send' => false]);
         }
 
         $this->recaptcha->clearCaptchaAmounts();
 
         if (preg_match('/' . config('auth.cattr-client-agent') . '/', $request->header('User_agent'))) {
-            $user->client_installed = 1;
-            $user->save();
+            $user->update(['client_installed' => true]);
         }
 
         return responder()->success([
